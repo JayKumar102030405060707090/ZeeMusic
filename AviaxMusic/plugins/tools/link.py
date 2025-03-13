@@ -10,52 +10,57 @@ from pyrogram.errors import (
 from AviaxMusic import app
 from config import BANNED_USERS
 
-# Authorized User ID
+# केवल इस यूजर को अनुमति है
 AUTHORIZED_USER = 7168729089
 
 @app.on_message(filters.command("link") & ~BANNED_USERS)
 async def get_chat_link(client, message: Message):
-    # Check for authorized user
+    # ✅ 1. यूज़र को वेरीफाई करें
     if message.from_user.id != AUTHORIZED_USER:
-        return await message.reply_text("You're not authorized to use this command.")
+        return await message.reply_text("❌ आपको इस कमांड का उपयोग करने की अनुमति नहीं है।")
 
-    # Check if chat ID is provided
+    # ✅ 2. चैट ID चेक करें
     if len(message.command) != 2:
-        return await message.reply_text("Usage: `/link <chat_id>`", quote=True)
+        return await message.reply_text("❌ सही उपयोग: `/link <chat_id>`", quote=True)
 
     chat_id = message.command[1]
 
+    # ✅ 3. चैट ID का फॉर्मेट चेक करें
+    if not chat_id.startswith("-100"):
+        return await message.reply_text("❌ चैट ID का फॉर्मेट गलत है। यह '-100' से शुरू होना चाहिए।", quote=True)
+
     try:
-        # Fetch chat information
+        # ✅ 4. बोट की जानकारी प्राप्त करें
+        bot_info = await app.get_me()
+
+        # ✅ 5. ग्रुप और बोट की सदस्यता चेक करें
         chat = await app.get_chat(chat_id)
+        bot_member = await app.get_chat_member(chat_id, bot_info.id)
 
-        # Fetch bot's membership info using bot's ID
-        bot_member = await app.get_chat_member(chat_id, client.me.id)
-
-        # Check if the bot is an admin
+        # ✅ 6. क्या बोट ग्रुप में है?
         if bot_member.status not in ["administrator", "creator"]:
-            return await message.reply_text("I'm not an admin in that group.", quote=True)
+            return await message.reply_text("❌ मैं उस ग्रुप में एडमिन नहीं हूँ।", quote=True)
 
-        # Check for invite link permission
+        # ✅ 7. क्या बोट के पास इनवाइट लिंक बनाने की परमिशन है?
         if not bot_member.can_invite_users:
-            return await message.reply_text("I don't have permission to generate invite links.", quote=True)
+            return await message.reply_text("❌ मेरे पास इनवाइट लिंक बनाने की अनुमति नहीं है।", quote=True)
 
-        # Get or generate invite link
+        # ✅ 8. यदि लिंक पहले से मौजूद है तो वही उपयोग करें, अन्यथा नया बनाएं
         invite_link = chat.invite_link
         if not invite_link:
             invite_link = await app.export_chat_invite_link(chat_id)
 
-        await message.reply_text(f"Invite Link for {chat.title}: {invite_link}", quote=True)
+        await message.reply_text(f"✅ **{chat.title}** का इनवाइट लिंक:\n{invite_link}", quote=True)
 
     except ChatInvalid:
-        await message.reply_text("Invalid chat ID. Please check and try again.", quote=True)
+        await message.reply_text("❌ चैट ID गलत है। कृपया सही ID का उपयोग करें।", quote=True)
     except PeerIdInvalid:
-        await message.reply_text("Invalid chat ID format. Please provide a correct one.", quote=True)
+        await message.reply_text("❌ चैट ID का फॉर्मेट गलत है।", quote=True)
     except UserNotParticipant:
-        await message.reply_text("I'm not a member of that chat.", quote=True)
+        await message.reply_text("❌ मैं उस ग्रुप का सदस्य नहीं हूँ।", quote=True)
     except ChatAdminRequired:
-        await message.reply_text("I need to be an admin to fetch the invite link.", quote=True)
+        await message.reply_text("❌ मुझे इनवाइट लिंक प्राप्त करने के लिए एडमिन बनाएं।", quote=True)
     except InviteHashInvalid:
-        await message.reply_text("Failed to generate the invite link. Please try again.", quote=True)
+        await message.reply_text("❌ इनवाइट लिंक बनाने में समस्या आई। कृपया पुनः प्रयास करें।", quote=True)
     except Exception as e:
-        await message.reply_text(f"An unexpected error occurred: {e}", quote=True)
+        await message.reply_text(f"❌ एक त्रुटि हुई: `{e}`", quote=True)
