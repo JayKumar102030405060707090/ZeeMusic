@@ -30,7 +30,7 @@ async def promos(client, message: Message):
 
 🔐ᴜꜱᴇ » /start ᴛᴏ ᴄʜᴇᴄᴋ ʙᴏᴛ.
 
-➲ ʙᴏᴛ : @Google_music_rebot
+➲ ʙᴏᴛ : @ZeeMusicBot
 """
     await message.reply(
         text=AMBOT,
